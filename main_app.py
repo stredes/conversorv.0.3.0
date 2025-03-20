@@ -6,11 +6,19 @@ import logging
 from pathlib import Path
 from datetime import datetime
 import tempfile
+import platform
 
 from config_dialog import ConfigDialog
 from excel_processor import validate_file, load_excel, apply_transformation
-from printer import export_to_pdf, print_document
+from printer import export_to_pdf
 from utils import load_config, LOG_FILE
+
+# Detectar sistema operativo
+if platform.system() == "Windows":
+    from printer import print_document
+else:
+    from printer_linux import print_document_linux as print_document
+
 
 try:
     from sqlalchemy import create_engine
@@ -21,7 +29,7 @@ class ExcelPrinterApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Transformador Excel - Dashboard")
-        self.geometry("1000x600")
+        self.geometry("600x400")
         self.configure(bg="#F9FAFB")
 
         self.df = None
@@ -68,7 +76,6 @@ class ExcelPrinterApp(tk.Tk):
         tk.Label(self.main_frame, text="Transformador Excel",
                  bg="#F9FAFB", fg="#111827", font=("Segoe UI", 18, "bold")).pack(pady=20)
 
-        # Modo de operación
         mode_frame = ttk.LabelFrame(self.main_frame, text="Modo de Operación", padding=15)
         mode_frame.pack(pady=10)
 
@@ -86,6 +93,7 @@ class ExcelPrinterApp(tk.Tk):
     def _update_status(self, message):
         self.status_var.set(message)
         self.update_idletasks()
+
     def _update_mode(self, selected_mode: str):
         if self.mode_vars[selected_mode].get():
             for mode in self.mode_vars:
@@ -111,17 +119,7 @@ class ExcelPrinterApp(tk.Tk):
             df = load_excel(file_path)
             self.df = df
             self.transformed_df = apply_transformation(self.df, self.config_columns, self.mode)
-
-            # Cargar hoja en Excel (para impresión)
-            from win32com.client import Dispatch
-            excel = Dispatch("Excel.Application")
-            excel.Visible = False
-            wb = excel.Workbooks.Open(str(Path(file_path).resolve()))
-            self.sheet = wb.ActiveSheet
-
-            # Mostrar vista previa elegante
             self.after(0, self._show_preview)
-
         except Exception as exc:
             messagebox.showerror("Error", f"Error al leer el archivo:\n{exc}")
             logging.error(f"Error: {exc}")
@@ -207,8 +205,9 @@ class ExcelPrinterApp(tk.Tk):
         ttk.Button(btn_frame, text="Cerrar", command=preview_win.destroy).pack(side=tk.LEFT, padx=5)
 
         load_page(current_offset)
+
     def _threaded_print(self):
-        if self.processing or self.sheet is None:
+        if self.processing or self.transformed_df is None:
             messagebox.showerror("Error", "Primero debe cargar un archivo Excel válido.")
             return
         threading.Thread(target=self._print_document, daemon=True).start()
@@ -219,24 +218,12 @@ class ExcelPrinterApp(tk.Tk):
                 messagebox.showerror("Error", "No hay datos para imprimir.")
                 return
 
-            # Guardar temporalmente el archivo editado
             temp_path = Path(tempfile.gettempdir()) / f"excel_editado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             self.transformed_df.to_excel(temp_path, index=False)
 
-            # Abrir con win32com
-            from win32com.client import Dispatch
-            excel = Dispatch("Excel.Application")
-            excel.Visible = False
-            wb = excel.Workbooks.Open(str(temp_path.resolve()))
-            sheet = wb.ActiveSheet
-
-            from printer import print_document
-            print_document(sheet, self.mode, self.config_columns, self.transformed_df)
+            print_document(temp_path, self.mode, self.config_columns, self.transformed_df)
 
             messagebox.showinfo("Impresión", "El documento editado se ha enviado a imprimir.")
-
-            wb.Close(SaveChanges=False)
-            excel.Quit()
 
         except Exception as e:
             messagebox.showerror("Error", f"Error al imprimir:\n{e}")
@@ -280,4 +267,3 @@ class ExcelPrinterApp(tk.Tk):
 if __name__ == "__main__":
     app = ExcelPrinterApp()
     app.mainloop()
-
