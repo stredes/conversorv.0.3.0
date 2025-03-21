@@ -1,5 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from .models import User, Configuracion as config, HistorialArchivo, RegistroImpresion
+
+
 
 # Definición base para los modelos
 Base = declarative_base()

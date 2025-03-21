@@ -10,11 +10,8 @@ import platform
 
 from config_dialog import ConfigDialog
 from excel_processor import validate_file, load_excel, apply_transformation
-from printer import export_to_pdf
+from printer import export_to_pdf, print_document
 from herramientas import abrir_herramientas
-from db.database import init_db
-from db.models import User, Config, FileHistory, PrintRecord
-from db.utils_db import create_user, get_user, save_file_history
 from utils import load_config, LOG_FILE
 from db import init_db, User, Config, FileHistory, PrintRecord, create_user, get_user, save_file_history
 

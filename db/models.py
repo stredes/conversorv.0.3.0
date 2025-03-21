@@ -1,50 +1,36 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship, declarative_base
+# db/models.py
+
+from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
 
-class Usuario(Base):
-    __tablename__ = 'usuarios'
+class User(Base):
+    __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    correo = Column(String, unique=True, nullable=False)
-    clave = Column(String, nullable=False)
-    modo_favorito = Column(String, default='listados')
-    ultima_carpeta = Column(String, nullable=True)
-
-    configuraciones = relationship("Configuracion", back_populates="usuario")
-    historial = relationship("HistorialArchivo", back_populates="usuario")
-    registros_impresion = relationship("RegistroImpresion", back_populates="usuario")
-
+    username = Column(String(100), unique=True, nullable=False)
+    password = Column(String(100), nullable=False)
+    email = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Configuracion(Base):
     __tablename__ = 'configuraciones'
     id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey('usuarios.id'))
-    nombre_columna = Column(String)
-    eliminar = Column(String)  # Guardar en formato JSON string
-    mantener = Column(String)  # Guardar en formato JSON string
-
-    usuario = relationship("Usuario", back_populates="configuraciones")
-
+    user_id = Column(Integer, nullable=False)
+    config_json = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class HistorialArchivo(Base):
     __tablename__ = 'historial_archivos'
     id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey('usuarios.id'))
-    nombre_archivo = Column(String)
-    fecha_procesado = Column(DateTime, default=datetime.utcnow)
-    modo_utilizado = Column(String)
-
-    usuario = relationship("Usuario", back_populates="historial")
-
+    filename = Column(String(255), nullable=False)
+    processed_at = Column(DateTime, default=datetime.utcnow)
+    mode_used = Column(String(50))
 
 class RegistroImpresion(Base):
     __tablename__ = 'registros_impresion'
     id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey('usuarios.id'))
-    archivo_impreso = Column(String)
-    fecha_impresion = Column(DateTime, default=datetime.utcnow)
-    impresora = Column(String)
-
-    usuario = relationship("Usuario", back_populates="registros_impresion")
+    file_id = Column(Integer, nullable=False)
+    printer_name = Column(String(100))
+    printed_at = Column(DateTime, default=datetime.utcnow)
