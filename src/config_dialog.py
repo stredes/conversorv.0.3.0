@@ -4,7 +4,7 @@ from tkinter import ttk
 import json
 from pathlib import Path
 from typing import List, Set, Dict
-from utils import CONFIG_FILE, save_config
+from db.utils import CONFIG_FILE, save_config
 
 class ConfigDialog(tk.Toplevel):
     def __init__(self, parent: tk.Tk, mode: str, available_columns: List[str], config_columns: Dict[str, Dict[str, Set[str]]]) -> None:
