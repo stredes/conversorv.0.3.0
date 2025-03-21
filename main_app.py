@@ -11,8 +11,12 @@ import platform
 from config_dialog import ConfigDialog
 from excel_processor import validate_file, load_excel, apply_transformation
 from printer import export_to_pdf
-from db.utils import load_config, LOG_FILE
 from herramientas import abrir_herramientas
+from db.database import init_db
+from db.models import User, Config, FileHistory, PrintRecord
+from db.utils_db import create_user, get_user, save_file_history
+from utils import load_config, LOG_FILE
+from db import init_db, User, Config, FileHistory, PrintRecord, create_user, get_user, save_file_history
 
 
 # Detectar sistema operativo
@@ -21,18 +25,15 @@ if platform.system() == "Windows":
 else:
     from printer_linux import print_document_linux as print_document
 
-
-try:
-    from sqlalchemy import create_engine
-except ImportError:
-    create_engine = None
-
 class ExcelPrinterApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Transformador Excel - Dashboard")
-        self.geometry("600x400")
+        self.geometry("1000x600")
         self.configure(bg="#F9FAFB")
+
+        # Inicializar DB
+        init_db()
 
         self.df = None
         self.transformed_df = None
@@ -69,9 +70,8 @@ class ExcelPrinterApp(tk.Tk):
         ttk.Button(sidebar, text="Configuración ⚙️", command=self._open_config_menu).pack(pady=10, fill="x", padx=10)
         ttk.Button(sidebar, text="Exportar PDF 📄", command=lambda: export_to_pdf(self.transformed_df, self)).pack(pady=10, fill="x", padx=10)
         ttk.Button(sidebar, text="Ver Logs 📋", command=self.view_logs).pack(pady=10, fill="x", padx=10)
-        ttk.Button(sidebar, text="Salir ❌", command=self.quit).pack(side="bottom", pady=20, fill="x", padx=10)
         ttk.Button(sidebar, text="Herramientas 🛠️", command=lambda: abrir_herramientas(self, self.transformed_df)).pack(pady=10, fill="x", padx=10)
-
+        ttk.Button(sidebar, text="Salir ❌", command=self.quit).pack(side="bottom", pady=20, fill="x", padx=10)
 
     def _setup_main_area(self):
         self.main_frame = tk.Frame(self, bg="#F9FAFB")
@@ -123,6 +123,8 @@ class ExcelPrinterApp(tk.Tk):
             df = load_excel(file_path)
             self.df = df
             self.transformed_df = apply_transformation(self.df, self.config_columns, self.mode)
+            # Guardar historial en la DB
+            save_file_history(file_path, self.mode)
             self.after(0, self._show_preview)
         except Exception as exc:
             messagebox.showerror("Error", f"Error al leer el archivo:\n{exc}")
@@ -254,19 +256,6 @@ class ExcelPrinterApp(tk.Tk):
         txt.pack(fill=tk.BOTH, expand=True)
         with LOG_FILE.open("r", encoding="utf-8", errors="replace") as f:
             txt.insert(tk.END, f.read())
-
-    def connect_to_db(self):
-        if create_engine is None:
-            messagebox.showerror("Error", "SQLAlchemy no está instalado.")
-            return
-        try:
-            engine = create_engine("sqlite:///:memory:")
-            connection = engine.connect()
-            messagebox.showinfo("Conexión a BD", "Conexión exitosa a la base de datos SQLite.")
-            logging.info("Conexión a BD exitosa.")
-            connection.close()
-        except Exception as e:
-            messagebox.showerror("Error", f"Error al conectar a la BD:\n{e}")
 
 if __name__ == "__main__":
     app = ExcelPrinterApp()
