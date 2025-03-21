@@ -11,7 +11,7 @@ import platform
 from config_dialog import ConfigDialog
 from excel_processor import validate_file, load_excel, apply_transformation
 from printer import export_to_pdf
-from utils import load_config, LOG_FILE
+from db.utils import load_config, LOG_FILE
 from herramientas import abrir_herramientas
 
 
