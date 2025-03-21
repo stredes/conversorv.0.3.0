@@ -9,7 +9,6 @@ from email.message import EmailMessage
 import json
 import tempfile
 
-
 # ---------- Configuración de Usuario (almacenamiento) ----------
 USER_CONFIG_FILE = Path("config_usuario.json")
 
@@ -164,20 +163,39 @@ def buscar_datos(df, parent):
     entry.pack(pady=5)
     tk.Button(buscar_win, text="Buscar", command=buscar).pack(pady=10)
 
-# ---------- Modo Oscuro/Claro ----------
-def alternar_tema(root, style):
-    if style.theme_use() == "clam":
-        style.theme_use("default")
-        root.configure(bg="#F9FAFB")
-    else:
-        style.theme_use("clam")
-        root.configure(bg="#111827")
-
 # ---------- Envío por Email ----------
-def enviar_email(df):
+def enviar_email(df, parent):
     if df is None or df.empty:
         messagebox.showerror("Error", "No hay datos para enviar.")
         return
+
+    config = cargar_config_usuario()
+    email_saved = config.get("email", "")
+    password_saved = config.get("password", "")
+
+    if not email_saved or not password_saved:
+        login_win = tk.Toplevel(parent)
+        login_win.title("Login Email")
+        login_win.geometry("300x200")
+
+        tk.Label(login_win, text="Correo:").pack(pady=5)
+        email_entry = tk.Entry(login_win)
+        email_entry.pack(pady=5)
+        tk.Label(login_win, text="Contraseña:").pack(pady=5)
+        password_entry = tk.Entry(login_win, show='*')
+        password_entry.pack(pady=5)
+
+        def guardar():
+            email = email_entry.get()
+            password = password_entry.get()
+            if email and password:
+                config["email"] = email
+                config["password"] = password
+                guardar_config_usuario(config)
+                login_win.destroy()
+
+        tk.Button(login_win, text="Guardar", command=guardar).pack(pady=10)
+        parent.wait_window(login_win)
 
     to_email = simpledialog.askstring("Enviar Email", "Correo destino:")
     if not to_email:
@@ -189,15 +207,15 @@ def enviar_email(df):
 
         msg = EmailMessage()
         msg['Subject'] = 'Datos Exportados'
-        msg['From'] = 'tuemail@dominio.com'
+        msg['From'] = config["email"]
         msg['To'] = to_email
         msg.set_content("Adjunto los datos solicitados.")
         with open(temp_path, "rb") as f:
-            msg.add_attachment(f.read(), maintype="application", subtype="xlsx", filename=temp_path.name)
+            msg.add_attachment(f.read(), maintype="application", subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=temp_path.name)
 
-        with smtplib.SMTP('smtp.dominio.com', 587) as server:
+        with smtplib.SMTP('smtp.tudominio.com', 587) as server:
             server.starttls()
-            server.login('tuemail@dominio.com', 'tupassword')
+            server.login(config["email"], config["password"])
             server.send_message(msg)
 
         messagebox.showinfo("Email", f"Correo enviado a {to_email}")
@@ -209,7 +227,7 @@ def enviar_email(df):
 def abrir_herramientas(parent, df):
     tools_win = tk.Toplevel(parent)
     tools_win.title("Herramientas Avanzadas")
-    tools_win.geometry("400x500")
+    tools_win.geometry("400x550")
 
     style = ttk.Style()
     style.configure("TButton", font=("Segoe UI", 11), padding=8)
@@ -220,4 +238,4 @@ def abrir_herramientas(parent, df):
     ttk.Button(tools_win, text="📁 Exportar PDF", command=lambda: exportar_pdf(df)).pack(pady=10, fill="x", padx=20)
     ttk.Button(tools_win, text="🎨 Editor Columnas", command=lambda: editor_columnas(df)).pack(pady=10, fill="x", padx=20)
     ttk.Button(tools_win, text="🔍 Buscar Datos", command=lambda: buscar_datos(df, tools_win)).pack(pady=10, fill="x", padx=20)
-    ttk.Button(tools_win, text="📧 Enviar Email", command=lambda: enviar_email(df)).pack(pady=10, fill="x", padx=20)
+    ttk.Button(tools_win, text="📧 Enviar Email", command=lambda: enviar_email(df, tools_win)).pack(pady=10, fill="x", padx=20)
