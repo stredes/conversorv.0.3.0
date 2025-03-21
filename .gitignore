@@ -1,0 +1,55 @@
+# Entorno Virtual
+env/
+venv/
+ENV/
+VENV/
+
+# Archivos de configuración específicos
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Archivos ocultos y de sistema
+.DS_Store
+Thumbs.db
+
+# Configuración de VSCode
+.vscode/
+
+# Archivos temporales y logs
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Archivos de salida/reportes temporales
+*.xlsx
+*.xls
+*.csv
+*.pdf
+
+# Dependencias instaladas
+Lib/
+Scripts/
+
+# Archivos de PyInstaller / empaquetado
+build/
+dist/
+*.spec
+
+# Archivos de tests/cache
+.pytest_cache/
+.cache/
+
+# Archivos de bases de datos locales
+database/*.db
+database/__pycache__/
+
+# Datos generados temporalmente
+reports/*.xlsx
+reports/*.csv
+reports/*.pdf
