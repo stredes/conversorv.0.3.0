@@ -12,6 +12,8 @@ from config_dialog import ConfigDialog
 from excel_processor import validate_file, load_excel, apply_transformation
 from printer import export_to_pdf
 from utils import load_config, LOG_FILE
+from herramientas import abrir_herramientas
+
 
 # Detectar sistema operativo
 if platform.system() == "Windows":
@@ -68,6 +70,8 @@ class ExcelPrinterApp(tk.Tk):
         ttk.Button(sidebar, text="Exportar PDF 📄", command=lambda: export_to_pdf(self.transformed_df, self)).pack(pady=10, fill="x", padx=10)
         ttk.Button(sidebar, text="Ver Logs 📋", command=self.view_logs).pack(pady=10, fill="x", padx=10)
         ttk.Button(sidebar, text="Salir ❌", command=self.quit).pack(side="bottom", pady=20, fill="x", padx=10)
+        ttk.Button(sidebar, text="Herramientas 🛠️", command=lambda: abrir_herramientas(self, self.transformed_df)).pack(pady=10, fill="x", padx=10)
+
 
     def _setup_main_area(self):
         self.main_frame = tk.Frame(self, bg="#F9FAFB")
